@@ -246,7 +246,9 @@ _LIBUNWIND_HIDDEN void __unw_iterate_dwarf_unwind_cache(void (*func)(
     unw_word_t ip_start, unw_word_t ip_end, unw_word_t fde, unw_word_t mh)) {
   _LIBUNWIND_TRACE_API("__unw_iterate_dwarf_unwind_cache(func=%p)",
                        reinterpret_cast<void *>(func));
+#if !defined(_LIBUNWIND_NO_HEAP)
   DwarfFDECache<LocalAddressSpace>::iterateCacheEntries(func);
+#endif
 }
 _LIBUNWIND_WEAK_ALIAS(__unw_iterate_dwarf_unwind_cache,
                       unw_iterate_dwarf_unwind_cache)
@@ -261,10 +263,12 @@ void __unw_add_dynamic_fde(unw_word_t fde) {
   if (message == NULL) {
     // dynamically registered FDEs don't have a mach_header group they are in.
     // Use fde as mh_group
+#if !defined(_LIBUNWIND_NO_HEAP)
     unw_word_t mh_group = fdeInfo.fdeStart;
     DwarfFDECache<LocalAddressSpace>::add((LocalAddressSpace::pint_t)mh_group,
                                           fdeInfo.pcStart, fdeInfo.pcEnd,
                                           fdeInfo.fdeStart);
+#endif
   } else {
     _LIBUNWIND_DEBUG_LOG("__unw_add_dynamic_fde: bad fde: %s", message);
   }
@@ -273,7 +277,9 @@ void __unw_add_dynamic_fde(unw_word_t fde) {
 /// IPI: for __deregister_frame()
 void __unw_remove_dynamic_fde(unw_word_t fde) {
   // fde is own mh_group
+#if !defined(_LIBUNWIND_NO_HEAP)
   DwarfFDECache<LocalAddressSpace>::removeAllIn((LocalAddressSpace::pint_t)fde);
+#endif // !defined(_LIBUNWIND_NO_HEAP)
 }
 #endif // defined(_LIBUNWIND_SUPPORT_DWARF_UNWIND)
 #endif // !defined(__USING_SJLJ_EXCEPTIONS__)
