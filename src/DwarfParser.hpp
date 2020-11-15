@@ -95,8 +95,10 @@ public:
 
     // When saving registers, this data structure is lazily initialized.
     PrologInfo(InitializeTime IT = InitializeTime::kNormal) {
-      if (IT == InitializeTime::kNormal)
+      if (IT == InitializeTime::kNormal) {
         memset(this, 0, sizeof(*this));
+        cfaRegister = (uint32_t)(-1);
+      }
     }
     void checkSaveRegister(uint64_t reg, PrologInfo &initialState) {
       if (!savedRegisters[reg].initialStateSaved) {
@@ -611,7 +613,7 @@ bool CFI_Parser<A>::parseFDEInstructions(A &addressSpace,
                                results->cfaRegisterOffset);
         break;
       case DW_CFA_def_cfa_expression:
-        results->cfaRegister = 0;
+        results->cfaRegister = (uint32_t)(-1);
         results->cfaExpression = (int64_t)p;
         length = addressSpace.getULEB128(p, instructionsEnd);
         assert(length < static_cast<pint_t>(~0) && "pointer overflow");
