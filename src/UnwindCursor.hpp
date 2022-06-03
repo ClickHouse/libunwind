@@ -2953,10 +2953,11 @@ template <typename A, typename R> int UnwindCursor<A, R>::step(bool stage2) {
 
 template <typename A, typename R>
 void UnwindCursor<A, R>::getInfo(unw_proc_info_t *info) {
-  if (_unwindInfoMissing)
-    memset(info, 0, sizeof(*info));
-  else
-    *info = _info;
+  /// TODO: Revert after disable backtrace inteception in asan
+  // if (_unwindInfoMissing)
+  //   memset(info, 0, sizeof(*info));
+  // else
+  *info = _info;
 }
 
 template <typename A, typename R>
