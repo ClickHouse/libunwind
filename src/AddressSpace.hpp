@@ -416,10 +416,10 @@ static bool checkForUnwindInfoSegment(const Elf_Phdr *phdr, size_t image_base,
     if (EHHeaderParser<LocalAddressSpace>::decodeEHHdr(
             *cbdata->addressSpace, eh_frame_hdr_start,
             eh_frame_hdr_start + phdr->p_memsz, hdrInfo)) {
-      // .eh_frame_hdr records the start of .eh_frame, but not its size.
-      // Rely on a zero terminator to find the end of the section.
       cbdata->sects->dwarf_section = hdrInfo.eh_frame_ptr;
-      cbdata->sects->dwarf_section_length = SIZE_MAX;
+      // .eh_frame_hdr records the start of .eh_frame, but not its size.
+      // See https://bugs.llvm.org/show_bug.cgi?id=36005
+      cbdata->sects->dwarf_section_length = cbdata->sects->text_segment_length - (cbdata->sects->dwarf_section - cbdata->sects->dso_base);
       return true;
     }
   }
