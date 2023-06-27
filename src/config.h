@@ -155,20 +155,13 @@ int fileno(FILE *stream);
 #define _FPRINTF_WRAPPER(file, msg, ...) \
   do { \
     char buf[128]; \
-    int num_bytes = snprintf(buf, 128, msg, __VA_ARGS__); \
+    int num_bytes = snprintf(buf, 128, msg __VA_OPT__(,) __VA_ARGS__); \
     int fd = fileno(file); \
     if (num_bytes > 0 && fd >= 0) \
     { \
       num_bytes = num_bytes < 128 ? num_bytes : 127; \
       write(fd, buf, num_bytes); \
     } \
-  } while(0);
-
-#define _FPRINTF_WRAPPER0(file, msg) \
-  do { \
-    int fd = fileno(file); \
-    if (fd >= 0) \
-      write(fd, msg, sizeof(msg) - 1); \
   } while(0);
 
 #if defined(NDEBUG) && defined(_LIBUNWIND_IS_BAREMETAL)
@@ -190,7 +183,7 @@ int fileno(FILE *stream);
 #define _LIBUNWIND_LOG(msg, ...)
 #else
 #define _LIBUNWIND_LOG0(msg) do {                                              \
-    _FPRINTF_WRAPPER0(stderr, "libunwind: " msg "\n");                         \
+    _FPRINTF_WRAPPER(stderr, "libunwind: " msg "\n");                         \
     fflush(stderr);                                                            \
   } while (0)
 #define _LIBUNWIND_LOG(msg, ...) do {                                          \
