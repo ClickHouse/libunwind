@@ -147,6 +147,8 @@
 #define _LIBUNWIND_REMEMBER_CLEANUP_NEEDED
 #endif
 
+int fileno(FILE *stream);
+
 /// Wrapper for fprintf, to avoid using if from signal handler.
 /// Function snprintf is not signal-safe as well, but hopefully it will be fine.
 /// Don't care about checking result of write() here.
@@ -154,7 +156,7 @@
   do { \
     char buf[128]; \
     int num_bytes = snprintf(buf, 128, msg, __VA_ARGS__); \
-    int fd = file->_fileno; \
+    int fd = fileno(file); \
     if (num_bytes > 0 && fd >= 0) \
     { \
       num_bytes = num_bytes < 128 ? num_bytes : 127; \
@@ -164,7 +166,7 @@
 
 #define _FPRINTF_WRAPPER0(file, msg) \
   do { \
-    int fd = file->_fileno; \
+    int fd = fileno(file); \
     if (fd >= 0) \
       write(fd, msg, sizeof(msg) - 1); \
   } while(0);
