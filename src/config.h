@@ -147,7 +147,9 @@
 #define _LIBUNWIND_REMEMBER_CLEANUP_NEEDED
 #endif
 
+#ifndef fileno
 int fileno(FILE *stream);
+#endif
 
 /// Wrapper for fprintf, to avoid using if from signal handler.
 /// Function snprintf is not signal-safe as well, but hopefully it will be fine.
