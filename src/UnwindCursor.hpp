@@ -1684,12 +1684,27 @@ bool UnwindCursor<A, R>::getInfoFromDwarfSection(pint_t pc,
       foundInCache = foundFDE;
     }
   }
-  if (!foundFDE) {
+
+  /** This code path is disabled, because it is prohibitively slow
+    * when we cannot use the cache (_LIBUNWIND_NO_HEAP).
+    * The "DWARF index" is typically present, so we should not get here.
+    *
+    * But it is possible that the FDE is not found,
+    * when some assembly functions are not properly annotated
+    * (with .cfi_startproc, .cfi_endproc, etc).
+    * This is the case when building with Musl instead of GLibC,
+    * for example see the function src/thread/x86_64/clone.s in Musl
+    * and sysdeps/unix/sysv/linux/x86_64/clone.S in GLibC.
+    *
+    * But in this case, the FDE will not be found anyway.
+    */
+/*  if (!foundFDE) {
     // Still not found, do full scan of __eh_frame section.
     foundFDE = CFI_Parser<A>::findFDE(_addressSpace, pc, sects.dwarf_section,
                                       sects.dwarf_section_length, 0,
                                       &fdeInfo, &cieInfo);
-  }
+  }*/
+
   if (foundFDE) {
     if (getInfoFromFdeCie(fdeInfo, cieInfo, pc, sects.dso_base)) {
       // Add to cache (to make next lookup faster) if we had no hint
