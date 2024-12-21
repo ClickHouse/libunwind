@@ -116,7 +116,7 @@ private:
 
   // These fields are all static to avoid needing an initializer.
   // There is only one instance of this class per process.
-  static RWMutex _lock;
+  static LockFreeRWMutex _lock;
 #ifdef __APPLE__
   static void dyldUnloadHook(const struct mach_header *mh, intptr_t slide);
   static bool _registeredForDyldUnloads;
@@ -143,7 +143,7 @@ template <typename A>
 typename DwarfFDECache<A>::entry DwarfFDECache<A>::_initialBuffer[64];
 
 template <typename A>
-RWMutex DwarfFDECache<A>::_lock;
+LockFreeRWMutex DwarfFDECache<A>::_lock;
 
 #ifdef __APPLE__
 template <typename A>
