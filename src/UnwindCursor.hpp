@@ -153,6 +153,7 @@ bool DwarfFDECache<A>::_registeredForDyldUnloads = false;
 template <typename A>
 typename A::pint_t DwarfFDECache<A>::findFDE(pint_t mh, pint_t pc) {
   pint_t result = 0;
+#if !defined(_LIBUNWIND_NO_HEAP)
   _LIBUNWIND_LOG_IF_FALSE(_lock.lock_shared());
   for (entry *p = _buffer; p < _bufferUsed; ++p) {
     if ((mh == p->mh) || (mh == kSearchAll)) {
@@ -163,6 +164,7 @@ typename A::pint_t DwarfFDECache<A>::findFDE(pint_t mh, pint_t pc) {
     }
   }
   _LIBUNWIND_LOG_IF_FALSE(_lock.unlock_shared());
+#endif
   return result;
 }
 
@@ -200,6 +202,7 @@ void DwarfFDECache<A>::add(pint_t mh, pint_t ip_start, pint_t ip_end,
 
 template <typename A>
 void DwarfFDECache<A>::removeAllIn(pint_t mh) {
+#if !defined(_LIBUNWIND_NO_HEAP)
   _LIBUNWIND_LOG_IF_FALSE(_lock.lock());
   entry *d = _buffer;
   for (const entry *s = _buffer; s < _bufferUsed; ++s) {
@@ -211,6 +214,7 @@ void DwarfFDECache<A>::removeAllIn(pint_t mh) {
   }
   _bufferUsed = d;
   _LIBUNWIND_LOG_IF_FALSE(_lock.unlock());
+#endif
 }
 
 #ifdef __APPLE__
@@ -223,11 +227,13 @@ void DwarfFDECache<A>::dyldUnloadHook(const struct mach_header *mh, intptr_t ) {
 template <typename A>
 void DwarfFDECache<A>::iterateCacheEntries(void (*func)(
     unw_word_t ip_start, unw_word_t ip_end, unw_word_t fde, unw_word_t mh)) {
+#if !defined(_LIBUNWIND_NO_HEAP)
   _LIBUNWIND_LOG_IF_FALSE(_lock.lock());
   for (entry *p = _buffer; p < _bufferUsed; ++p) {
     (*func)(p->ip_start, p->ip_end, p->fde, p->mh);
   }
   _LIBUNWIND_LOG_IF_FALSE(_lock.unlock());
+#endif
 }
 #endif // defined(_LIBUNWIND_SUPPORT_DWARF_UNWIND)
 
