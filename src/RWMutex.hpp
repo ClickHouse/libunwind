@@ -18,9 +18,7 @@
 #elif !defined(_LIBUNWIND_HAS_NO_THREADS)
 #include <limits.h>
 #include <pthread.h>
-extern "C" {
-#include <stdatomic.h>
-}
+#include <atomic>
 #include <stdlib.h>
 #include <sched.h>
 #if defined(__ELF__) && defined(_LIBUNWIND_LINK_PTHREAD_LIB)
@@ -127,22 +125,18 @@ private:
 /// It's supposed to be async-signal-safe.
 class LockFreeRWMutex {
 public:
-  LockFreeRWMutex() {
-    atomic_init(&state, 0);
-    atomic_init(&waiting_writers, 0);
-  }
+  LockFreeRWMutex() = default;
 
   bool lock_shared() {
     while (true) {
-      int current_state = atomic_load(&state);
+      int current_state = state.load();
       if (current_state < 0 || current_state >= INT_MAX ||
-          atomic_load(&waiting_writers) > 0) {
+          waiting_writers.load() > 0) {
         sched_yield();
         continue;
       }
 
-      if (atomic_compare_exchange_weak(&state, &current_state,
-                                       current_state + 1)) {
+      if (state.compare_exchange_weak(current_state, current_state + 1)) {
         return true;
       }
       sched_yield();
@@ -150,7 +144,7 @@ public:
   }
 
   bool unlock_shared() {
-    int current_state = atomic_fetch_sub(&state, 1);
+    int current_state = state.fetch_sub(1);
     if (current_state <= 0) {
       abort();
     }
@@ -159,15 +153,14 @@ public:
 
   bool lock() {
     while (true) {
-      int current_waiting_writers = atomic_load(&waiting_writers);
+      int current_waiting_writers = waiting_writers.load();
       if (current_waiting_writers == INT_MAX) {
         sched_yield();
         continue;
       }
 
-      if (atomic_compare_exchange_weak(&waiting_writers,
-                                       &current_waiting_writers,
-                                       current_waiting_writers + 1)) {
+      if (waiting_writers.compare_exchange_weak(current_waiting_writers,
+                                                current_waiting_writers + 1)) {
         break;
       }
       sched_yield();
@@ -175,8 +168,8 @@ public:
 
     while (true) {
       int expected = 0;
-      if (atomic_compare_exchange_weak(&state, &expected, -1)) {
-        atomic_fetch_sub(&waiting_writers, 1);
+      if (state.compare_exchange_weak(expected, -1)) {
+        waiting_writers.fetch_sub(1);
         return true;
       }
       sched_yield();
@@ -184,11 +177,11 @@ public:
   }
 
   bool unlock() {
-    int current_state = atomic_load(&state);
+    int current_state = state.load();
     if (current_state != -1) {
         abort();
     }
-    atomic_store(&state, 0);
+    state.store(0);
     return true;
   }
 
@@ -197,10 +190,10 @@ private:
   // - Positive: Number of active readers
   // - Zero: Unlocked
   // - Negative (-1): Writer holding the lock
-  atomic_int state;
+  std::atomic<int> state {0};
 
   // Number of writers waiting for the lock
-  atomic_int waiting_writers;
+  std::atomic<int> waiting_writers {0};
 };
 
 } // namespace libunwind
