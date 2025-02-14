@@ -18,7 +18,9 @@
 #elif !defined(_LIBUNWIND_HAS_NO_THREADS)
 #include <limits.h>
 #include <pthread.h>
+extern "C" {
 #include <stdatomic.h>
+}
 #include <stdlib.h>
 #include <sched.h>
 #if defined(__ELF__) && defined(_LIBUNWIND_LINK_PTHREAD_LIB)
