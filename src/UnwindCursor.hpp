@@ -2615,6 +2615,14 @@ void UnwindCursor<A, R>::setInfoBasedOnIPRegister(bool isReturnAddress) {
     --pc;
 #endif
 
+#if !(defined(_LIBUNWIND_SUPPORT_SEH_UNWIND) && defined(_WIN32))
+  // In case of this is frame of signal handler, the IP saved in the signal
+  // handler points to first non-executed instruction, while FDE/CIE expects IP
+  // to be after the first non-executed instruction.
+  if (_isSignalFrame)
+    ++pc;
+#endif
+
   // Ask address space object to find unwind sections for this pc.
   UnwindInfoSections sects;
   if (_addressSpace.findUnwindSections(pc, sects)) {
@@ -2770,15 +2778,7 @@ int UnwindCursor<A, R>::stepThroughSigReturn(Registers_arm64 &) {
     _registers.setRegister(UNW_AARCH64_X0 + i, value);
   }
   _registers.setSP(_addressSpace.get64(sigctx + kOffsetSp));
-
-  // The +1 story is the same as in DwarfInstructions::stepWithDwarf()
-  // (search for "returnAddress + cieInfo.isSignalFrame" or "Return address points to the next instruction").
-  // This is probably not the right place for this because this function is not necessarily used
-  // with DWARF. Need to research whether the other unwind methods have the same +-1 situation or
-  // are off by one.
-  pint_t returnAddress = _addressSpace.get64(sigctx + kOffsetPc);
-  _registers.setIP(returnAddress + 1);
-
+  _registers.setIP(_addressSpace.get64(sigctx + kOffsetPc));
   _isSignalFrame = true;
   return UNW_STEP_SUCCESS;
 }
